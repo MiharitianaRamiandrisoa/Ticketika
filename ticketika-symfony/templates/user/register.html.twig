@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Créer un compte{% endblock %}
+
+{% block content %}
+<section class="mx-auto max-w-lg px-5 py-16 lg:px-8">
+    <div class="card p-7 md:p-10">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-olympia-sauge">Mon espace</p>
+        <h1 class="mt-3 text-3xl font-bold text-olympia-bleu">Créer un compte</h1>
+        <p class="mt-2 text-olympia-secondaire">Votre compte centralise vos réservations et vos billets.</p>
+
+        {% if error %}
+            <p class="mt-6 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" role="alert">{{ error }}</p>
+        {% endif %}
+
+        {{ form_start(form, {attr: {class: 'mt-8 space-y-5'}}) }}
+            {{ form_row(form.firstName) }}
+            {{ form_row(form.lastName) }}
+            {{ form_row(form.email) }}
+            {{ form_row(form.password.first) }}
+            {{ form_row(form.password.second) }}
+            <button type="submit" class="btn-primary w-full">Créer mon compte</button>
+        {{ form_end(form) }}
+
+        <p class="mt-6 text-center text-sm text-olympia-secondaire">
+            Vous avez déjà un compte ? <a href="{{ path('login') }}" class="font-semibold text-olympia-bleu underline">Se connecter</a>
+        </p>
+    </div>
+</section>
+{% endblock %}

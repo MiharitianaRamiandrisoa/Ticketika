@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>{% block title %}Ticketika{% endblock %} · Olympia</title>
+    <meta name="description" content="{% block description %}Billetterie des événements du centre Olympia.{% endblock %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    {{ encore_entry_link_tags('app') }}
+</head>
+<body class="min-h-screen bg-olympia-creme font-sans text-olympia-fonce antialiased">
+    <a href="#contenu" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-2">Aller au contenu</a>
+
+    {% include 'partials/_header.html.twig' %}
+
+    <main id="contenu">
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="mx-auto mt-6 max-w-7xl px-5 lg:px-8" role="status">
+                    <p class="rounded-2xl px-4 py-3 text-sm font-semibold {{ label == 'error' ? 'bg-red-50 text-red-700' : 'bg-olympia-sable text-olympia-bleu' }}">{{ message }}</p>
+                </div>
+            {% endfor %}
+        {% endfor %}
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include 'partials/_footer.html.twig' %}
+
+    {{ encore_entry_script_tags('app') }}
+</body>
+</html>

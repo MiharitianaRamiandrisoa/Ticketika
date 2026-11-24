@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes billets{% endblock %}
+
+{% block content %}
+<section class="mx-auto max-w-5xl px-5 py-10 lg:px-8 lg:py-14">
+    <h1 class="text-3xl font-bold text-olympia-bleu md:text-4xl">Mes billets</h1>
+    <p class="mt-2 text-olympia-secondaire">Les billets achetés pendant cette session.</p>
+
+    <div class="mt-8 space-y-5">
+        {% for order in orders %}
+            {% for ticket in order.tickets %}
+            <article class="card flex flex-col overflow-hidden md:flex-row" data-reveal>
+                <div class="{{ order.event.gradientClass }} h-32 md:h-auto md:w-64"></div>
+                <div class="flex flex-1 flex-col justify-between gap-6 p-6 md:flex-row md:items-center md:p-8">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-olympia-secondaire">{{ order.event.startsAt|date('d/m/Y') }} · {{ order.event.startsAt|date('H:i') }}</p>
+                        <h2 class="mt-1 text-2xl font-bold text-olympia-bleu">{{ order.event.title }}</h2>
+                        <p class="mt-1 text-sm text-olympia-secondaire">{{ order.event.place }} · {{ ticket.ticketType.name }} · {{ ticket.code }}</p>
+                    </div>
+                    <a href="{{ path('order_show', {id: order.id}) }}" class="btn-primary whitespace-nowrap">Voir le billet</a>
+                </div>
+            </article>
+            {% endfor %}
+        {% else %}
+            <p class="rounded-3xl bg-white p-10 text-center text-olympia-secondaire ring-1 ring-olympia-sable-fonce">Vous n'avez pas encore de billet. <a class="font-semibold text-olympia-bleu underline" href="{{ path('events') }}">Découvrir les événements</a></p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

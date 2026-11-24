@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon espace{% endblock %}
+
+{% block content %}
+<section class="mx-auto max-w-5xl px-5 py-10 lg:px-8 lg:py-14">
+    <div class="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-olympia-sauge">Utilisateur</p>
+            <h1 class="mt-2 text-3xl font-bold text-olympia-bleu md:text-4xl">Bonjour {{ user.firstName }}</h1>
+            <p class="mt-2 text-olympia-secondaire">Retrouvez ici tous les billets associés à votre compte.</p>
+        </div>
+        <a href="{{ path('logout') }}" class="btn-ghost">Se déconnecter</a>
+    </div>
+
+    <div class="mt-8 grid gap-5 md:grid-cols-3">
+        <div class="card p-5 md:col-span-2">
+            <p class="text-xs font-semibold uppercase tracking-wider text-olympia-secondaire">Compte</p>
+            <p class="mt-2 text-lg font-bold text-olympia-bleu">{{ user.fullName }}</p>
+            <p class="mt-1 text-sm text-olympia-secondaire">{{ user.email }}</p>
+        </div>
+        <div class="rounded-3xl bg-olympia-bleu p-5 text-white">
+            <p class="text-xs font-semibold uppercase tracking-wider text-olympia-sable">Billets</p>
+            <p class="mt-2 text-3xl font-bold">{{ ticketCount }}</p>
+            <p class="mt-1 text-sm text-olympia-sable">billet{{ ticketCount > 1 ? 's' : '' }} dans votre espace</p>
+        </div>
+    </div>
+
+    <div class="mt-12">
+        <div class="flex items-end justify-between gap-4">
+            <h2 class="text-2xl font-bold text-olympia-bleu">Mes billets</h2>
+            <a href="{{ path('events') }}" class="text-sm font-semibold text-olympia-bleu hover:underline">Découvrir les événements →</a>
+        </div>
+        <div class="mt-6 space-y-5">
+            {% for order in orders %}
+                {% for ticket in order.tickets %}
+                <article class="card flex flex-col overflow-hidden md:flex-row" data-reveal>
+                    <div class="{{ order.event.gradientClass }} h-32 md:h-auto md:w-64"></div>
+                    <div class="flex flex-1 flex-col justify-between gap-6 p-6 md:flex-row md:items-center md:p-8">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-olympia-secondaire">{{ order.event.startsAt|date('d/m/Y') }} · {{ order.event.startsAt|date('H:i') }}</p>
+                            <h3 class="mt-1 text-2xl font-bold text-olympia-bleu">{{ order.event.title }}</h3>
+                            <p class="mt-1 text-sm text-olympia-secondaire">{{ order.event.place }} · {{ ticket.ticketType.name }} · {{ ticket.code }}</p>
+                        </div>
+                        <a href="{{ path('order_show', {id: order.id}) }}" class="btn-primary whitespace-nowrap">Voir le billet</a>
+                    </div>
+                </article>
+                {% endfor %}
+            {% else %}
+                <p class="rounded-3xl bg-white p-10 text-center text-olympia-secondaire ring-1 ring-olympia-sable-fonce">Vous n'avez pas encore de billet. <a class="font-semibold text-olympia-bleu underline" href="{{ path('events') }}">Découvrir les événements</a></p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

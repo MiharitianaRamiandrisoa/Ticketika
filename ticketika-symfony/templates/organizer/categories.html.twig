@@ -1,0 +1,44 @@
+{% extends 'organizer/_layout.html.twig' %}
+
+{% block title %}Catégories{% endblock %}
+
+{% block organizer %}
+<div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-olympia-sauge">Configuration</p>
+        <h1 class="mt-2 text-3xl font-bold text-olympia-bleu">Catégories</h1>
+        <p class="mt-1 text-olympia-secondaire">Les catégories actives sont proposées lors de la création d'un événement.</p>
+    </div>
+</div>
+
+<div class="mt-8 grid gap-6 xl:grid-cols-5">
+    <div class="card p-6 xl:col-span-2">
+        <h2 class="text-xl font-bold text-olympia-bleu">Ajouter une catégorie</h2>
+        {% if error %}<p class="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{{ error }}</p>{% endif %}
+        {{ form_start(form, {attr: {class: 'mt-6 space-y-5'}}) }}
+            {{ form_row(form.name) }}
+            <button type="submit" class="btn-primary w-full">Ajouter</button>
+        {{ form_end(form) }}
+    </div>
+
+    <div class="card overflow-hidden xl:col-span-3">
+        <div class="border-b border-olympia-sable-fonce/50 px-6 py-5"><h2 class="font-bold text-olympia-bleu">Catégories disponibles</h2></div>
+        <ul class="divide-y divide-olympia-sable-fonce/50">
+            {% for category in categories %}
+            <li class="flex items-center justify-between gap-4 px-6 py-5">
+                <div>
+                    <p class="font-semibold text-olympia-bleu">{{ category.name }}</p>
+                    <p class="text-xs text-olympia-secondaire">{{ category.slug }}</p>
+                </div>
+                <form method="post" action="{{ path('organizer_category_toggle', {id: category.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('category-toggle-' ~ category.id) }}">
+                    <button type="submit" class="rounded-full px-4 py-2 text-xs font-semibold {{ category.active ? 'bg-olympia-sable text-olympia-bleu' : 'bg-gray-100 text-gray-500' }}">{{ category.active ? 'Active' : 'Désactivée' }}</button>
+                </form>
+            </li>
+            {% else %}
+            <li class="px-6 py-8 text-sm text-olympia-secondaire">Aucune catégorie configurée.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends 'base.html.twig' %}
+{% block title %}Page introuvable{% endblock %}
+{% block content %}
+<section class="mx-auto flex max-w-2xl flex-col items-center px-5 py-24 text-center">
+    <p class="text-sm font-semibold uppercase tracking-wider text-olympia-sauge">Erreur 404</p>
+    <h1 class="mt-3 text-4xl font-bold text-olympia-bleu">Cette page n'existe pas.</h1>
+    <a href="{{ path('home') }}" class="btn-primary mt-8">Retour à l'accueil</a>
+</section>
+{% endblock %}

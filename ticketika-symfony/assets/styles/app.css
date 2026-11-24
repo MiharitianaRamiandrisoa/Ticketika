@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-olympia-bleu px-6 py-3 text-sm font-semibold text-white transition duration-200 hover:bg-olympia-fonce focus:outline-none focus-visible:ring-4 focus-visible:ring-olympia-dore;
+  }
+  .btn-accent {
+    @apply inline-flex items-center justify-center rounded-full bg-olympia-dore px-6 py-3 text-sm font-semibold text-olympia-fonce transition duration-200 hover:brightness-105 focus:outline-none focus-visible:ring-4 focus-visible:ring-olympia-bleu/40;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-full px-4 py-3 text-sm font-semibold text-olympia-bleu transition hover:bg-olympia-sable;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-full border border-olympia-sable-fonce bg-white px-4 py-2 text-sm font-semibold text-olympia-fonce transition hover:border-olympia-bleu;
+  }
+  .chip[aria-pressed="true"] {
+    @apply border-olympia-bleu bg-olympia-bleu text-white;
+  }
+  .field {
+    @apply w-full rounded-xl border border-olympia-sable-fonce bg-white px-4 py-3 text-sm text-olympia-fonce placeholder:text-olympia-secondaire focus:border-olympia-bleu focus:outline-none focus:ring-4 focus:ring-olympia-bleu/10;
+  }
+  .card {
+    @apply rounded-3xl bg-white shadow-sm ring-1 ring-olympia-sable-fonce/40;
+  }
+  [data-reveal] {
+    @apply translate-y-6 opacity-0 transition duration-700 ease-out;
+  }
+  [data-reveal].is-visible {
+    @apply translate-y-0 opacity-100;
+  }
+}
+
+/* Arrière-plan animé de l'accueil : dégradés mouvants */
+.hero-mesh {
+  background:
+    radial-gradient(900px 600px at 12% 8%, rgba(223, 207, 172, 0.30), transparent 60%),
+    radial-gradient(800px 700px at 88% 18%, rgba(126, 142, 108, 0.55), transparent 62%),
+    radial-gradient(700px 500px at 60% 100%, rgba(21, 73, 83, 0.9), transparent 70%),
+    linear-gradient(135deg, #103B43 0%, #154953 60%, #1b5c68 100%);
+  background-size: 140% 140%, 140% 140%, 140% 140%, 100% 100%;
+  animation: mesh-drift 22s ease-in-out infinite alternate;
+}
+@keyframes mesh-drift {
+  0%   { background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
+  100% { background-position: 30% 25%, 70% 40%, 40% 80%, 0 0; }
+}
+
+/* Texte en dégradé doré */
+.text-gradient-gold {
+  background-image: linear-gradient(90deg, #DFCFAC 0%, #FCFAF5 50%, #CDBB91 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Bandeau défilant */
+/* Halo lumineux derrière les cartes */
+.glow {
+  box-shadow: 0 0 0 1px rgba(223, 207, 172, 0.25), 0 30px 80px -20px rgba(3, 25, 30, 0.6);
+}
+
+/* Défilement horizontal masqué */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { scrollbar-width: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-mesh { animation: none; }
+  [data-reveal] { @apply translate-y-0 opacity-100 transition-none; }
+}

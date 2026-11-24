@@ -1,0 +1,16 @@
+{
+    "name": "ticketika-assets",
+    "private": true,
+    "scripts": {
+        "dev": "encore dev",
+        "watch": "encore dev --watch",
+        "build": "encore production"
+    },
+    "devDependencies": {
+        "@symfony/webpack-encore": "^5.0.0",
+        "autoprefixer": "^10.4.20",
+        "postcss": "^8.4.47",
+        "postcss-loader": "^8.1.1",
+        "tailwindcss": "^3.4.17"
+    }
+}

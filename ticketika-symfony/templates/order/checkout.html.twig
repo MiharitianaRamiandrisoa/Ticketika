@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Paiement{% endblock %}
+
+{% block content %}
+<section class="mx-auto max-w-7xl px-5 py-10 lg:px-8 lg:py-14">
+    <h1 class="text-3xl font-bold text-olympia-bleu md:text-4xl">Finaliser ma commande</h1>
+
+    <ol class="mt-6 flex flex-wrap items-center gap-3 text-sm font-semibold" aria-label="Étapes">
+        <li class="flex items-center gap-2 text-olympia-bleu"><span class="flex h-7 w-7 items-center justify-center rounded-full bg-olympia-bleu text-xs text-white">1</span> Billets</li>
+        <li class="h-px w-8 bg-olympia-sable-fonce" aria-hidden="true"></li>
+        <li class="flex items-center gap-2 text-olympia-bleu"><span class="flex h-7 w-7 items-center justify-center rounded-full bg-olympia-bleu text-xs text-white">2</span> Informations</li>
+        <li class="h-px w-8 bg-olympia-sable-fonce" aria-hidden="true"></li>
+        <li class="flex items-center gap-2"><span class="flex h-7 w-7 items-center justify-center rounded-full bg-olympia-dore text-xs text-olympia-fonce">3</span> Paiement</li>
+    </ol>
+
+    <div class="mt-8 grid gap-8 lg:grid-cols-3">
+        <div class="card p-6 md:p-8 lg:col-span-2">
+            {{ form_start(form, {attr: {class: 'space-y-6'}}) }}
+                <fieldset class="grid gap-4 md:grid-cols-2">
+                    <legend class="mb-2 text-lg font-bold text-olympia-bleu md:col-span-2">Vos informations</legend>
+                    {{ form_row(form.firstName) }}
+                    {{ form_row(form.lastName) }}
+                    <div class="md:col-span-2">{{ form_row(form.email) }}</div>
+                </fieldset>
+
+                <fieldset class="space-y-3">
+                    <legend class="mb-2 text-lg font-bold text-olympia-bleu">Moyen de paiement</legend>
+                    {{ form_row(form.paymentMethod) }}
+                </fieldset>
+
+                {# Quantités transmises à la validation #}
+                {% for typeId, qty in selection %}
+                    <input type="hidden" name="qty[{{ typeId }}]" value="{{ qty }}">
+                {% endfor %}
+
+                <button type="submit" class="btn-primary w-full !py-4">Payer {{ total|number_format(0, ',', ' ') }} Ar</button>
+            {{ form_end(form) }}
+        </div>
+
+        <aside class="card h-fit bg-gradient-to-br from-olympia-fonce to-olympia-bleu p-6 text-white ring-0 md:p-8 lg:sticky lg:top-24" aria-labelledby="recap">
+            <h2 id="recap" class="text-lg font-bold">Récapitulatif</h2>
+            <p class="mt-4 text-sm text-olympia-sable">{{ event.title }}</p>
+            <p class="text-xs text-olympia-sable-fonce">{{ event.startsAt|date('d/m/Y H:i') }} · {{ event.place }}</p>
+
+            <div class="mt-6 space-y-3 border-t border-white/15 pt-6 text-sm">
+                {% for type in event.ticketTypes %}
+                    {% if selection[type.id] is defined and selection[type.id] > 0 %}
+                        <div class="flex justify-between gap-4">
+                            <span class="text-olympia-sable">{{ type.name }} × {{ selection[type.id] }}</span>
+                            <span>{{ (type.priceAr * selection[type.id])|number_format(0, ',', ' ') }} Ar</span>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                <div class="flex justify-between"><span class="text-olympia-sable">Frais de service</span><span>{{ fee|number_format(0, ',', ' ') }} Ar</span></div>
+            </div>
+
+            <div class="mt-6 flex items-center justify-between border-t border-white/15 pt-6">
+                <span class="font-semibold">Total</span>
+                <span class="text-2xl font-bold text-olympia-dore">{{ total|number_format(0, ',', ' ') }} Ar</span>
+            </div>
+        </aside>
+    </div>
+</section>
+{% endblock %}

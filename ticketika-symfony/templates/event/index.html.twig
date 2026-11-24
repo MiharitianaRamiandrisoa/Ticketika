@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Événements{% endblock %}
+
+{% block content %}
+<section class="bg-gradient-to-br from-olympia-fonce to-olympia-bleu text-white">
+    <div class="mx-auto max-w-7xl px-5 py-12 lg:px-8 lg:py-16">
+        <h1 class="text-4xl font-bold md:text-5xl">Tous les événements</h1>
+        <p class="mt-3 text-olympia-sable">Concerts, spectacles et animations au centre Olympia.</p>
+        <form method="get" action="{{ path('events') }}" class="mt-8 flex flex-col gap-4 md:flex-row md:items-center">
+            {% if category %}<input type="hidden" name="cat" value="{{ category }}">{% endif %}
+            <label class="sr-only" for="recherche">Rechercher un événement</label>
+            <input id="recherche" type="search" name="q" value="{{ search }}" placeholder="Rechercher un événement, un lieu…" class="field !py-3.5 md:max-w-md" data-search>
+            <div class="flex flex-wrap gap-2" role="group" aria-label="Filtrer par catégorie">
+                <a href="{{ path('events') }}" class="chip !border-transparent !bg-white/10 !text-white" aria-pressed="{{ category is null ? 'true' : 'false' }}">Toutes</a>
+                {% for item in categories %}
+                    <a href="{{ path('events', {cat: item.slug}) }}" class="chip !border-transparent !bg-white/10 !text-white" aria-pressed="{{ category == item.slug ? 'true' : 'false' }}">{{ item.name }}</a>
+                {% endfor %}
+            </div>
+        </form>
+    </div>
+</section>
+<section class="mx-auto max-w-7xl px-5 py-12 lg:px-8">
+    <p class="mb-6 text-sm text-olympia-secondaire">{{ events|length }} événement{{ events|length > 1 ? 's' : '' }}</p>
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-results>
+        {% for event in events %}{% include 'partials/_event_card.html.twig' %}{% else %}<p class="col-span-full rounded-3xl bg-white p-10 text-center text-olympia-secondaire ring-1 ring-olympia-sable-fonce">Aucun événement ne correspond à votre recherche.</p>{% endfor %}
+    </div>
+</section>
+{% endblock %}

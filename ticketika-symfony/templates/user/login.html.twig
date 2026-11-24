@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ organizerLogin ? 'Connexion organisateur' : 'Connexion' }}{% endblock %}
+
+{% block content %}
+<section class="mx-auto max-w-lg px-5 py-16 lg:px-8">
+    <div class="card overflow-hidden">
+        <div class="{{ organizerLogin ? 'bg-gradient-to-br from-olympia-fonce to-olympia-bleu text-white' : 'bg-white' }} p-7 md:p-10">
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] {{ organizerLogin ? 'text-olympia-dore' : 'text-olympia-sauge' }}">{{ organizerLogin ? 'Back-office' : 'Mon espace' }}</p>
+            <h1 class="mt-3 text-3xl font-bold {{ organizerLogin ? 'text-white' : 'text-olympia-bleu' }}">{{ organizerLogin ? 'Connexion organisateur' : 'Se connecter' }}</h1>
+            <p class="mt-2 {{ organizerLogin ? 'text-olympia-sable' : 'text-olympia-secondaire' }}">{{ organizerLogin ? 'Accédez à la gestion des événements, des catégories et des entrées.' : 'Connectez-vous pour retrouver vos billets et finaliser une réservation.' }}</p>
+        </div>
+
+        <div class="p-7 md:p-10">
+            {% if error %}
+                <p class="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" role="alert">{{ error }}</p>
+            {% endif %}
+
+            {{ form_start(form, {attr: {class: 'space-y-5'}}) }}
+                {{ form_row(form.email) }}
+                {{ form_row(form.password) }}
+                <button type="submit" class="btn-primary w-full">{{ organizerLogin ? 'Ouvrir le back-office' : 'Se connecter' }}</button>
+            {{ form_end(form) }}
+
+            {% if organizerLogin %}
+                <p class="mt-6 text-center text-sm text-olympia-secondaire">Cet accès est réservé aux comptes organisateurs.</p>
+            {% else %}
+                <p class="mt-6 text-center text-sm text-olympia-secondaire">Pas encore de compte ? <a href="{{ path('register') }}" class="font-semibold text-olympia-bleu underline">Créer un compte</a></p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

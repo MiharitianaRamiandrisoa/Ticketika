@@ -1,0 +1,3 @@
+webpack_encore:
+    output_path: '%kernel.project_dir%/public/build'
+    # Tailwind et JavaScript sont compilés par Webpack Encore (voir webpack.config.js)

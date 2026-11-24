@@ -1,0 +1,35 @@
+{% extends 'organizer/_layout.html.twig' %}
+
+{% block title %}Nouvel événement{% endblock %}
+
+{% block organizer %}
+<h1 class="text-3xl font-bold text-olympia-bleu">Nouvel événement</h1>
+
+<div class="mt-8 grid gap-8 xl:grid-cols-5">
+    <div class="card p-6 md:p-8 xl:col-span-3">
+        {{ form_start(form, {attr: {class: 'space-y-5'}}) }}
+            {{ form_row(form.title) }}
+            <div class="grid gap-4 md:grid-cols-2">
+                {{ form_row(form.category) }}
+                {{ form_row(form.place) }}
+            </div>
+            <div class="grid gap-4 md:grid-cols-3">
+                {{ form_row(form.startsAt) }}
+                {{ form_row(form.capacity) }}
+                {{ form_row(form.priceAr) }}
+            </div>
+            {{ form_row(form.description) }}
+            <div class="flex justify-end">
+                <button type="submit" class="btn-primary">Publier l'événement</button>
+            </div>
+        {{ form_end(form) }}
+    </div>
+
+    <aside class="card p-6 xl:sticky xl:top-24 xl:col-span-2 xl:h-fit" aria-labelledby="apercu">
+        <h2 id="apercu" class="text-xs font-semibold uppercase tracking-wider text-olympia-secondaire">Aperçu</h2>
+        <div class="mt-4 h-40 rounded-2xl bg-gradient-to-br from-olympia-fonce to-olympia-bleu"></div>
+        <p class="mt-4 text-xl font-bold text-olympia-bleu" data-preview-title>Titre de l'événement</p>
+        <p class="text-sm text-olympia-secondaire">Votre événement apparaîtra ici dès sa publication.</p>
+    </aside>
+</div>
+{% endblock %}
