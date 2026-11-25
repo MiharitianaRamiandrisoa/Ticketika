@@ -7,6 +7,8 @@ use App\Entity\Order;
 use App\Form\OrderType;
 use App\Service\AuthService;
 use App\Service\OrderPlacer;
+use App\Service\OrderPaymentFinalizer;
+use App\Service\PapiClient;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,6 +22,8 @@ final class OrderController extends AbstractController
         Request $request,
         #[MapEntity(mapping: ['slug' => 'slug'])] Event $event,
         OrderPlacer $placer,
+        PapiClient $papi,
+        OrderPaymentFinalizer $finalizer,
         AuthService $auth,
     ): Response {
         $user = $auth->getUser($request);
@@ -47,13 +51,17 @@ final class OrderController extends AbstractController
         if ($request->isMethod('POST') && $form->isSubmitted() && $form->isValid()) {
             try {
                 $order = $placer->place($event, $quantities, $form->getData(), $user);
+                $paymentUrl = $papi->createPaymentLink($order);
             } catch (\RuntimeException $e) {
+                if (isset($order)) {
+                    $finalizer->markFailed($order);
+                }
                 $this->addFlash('error', $e->getMessage());
 
                 return $this->redirectToRoute('event_show', ['slug' => $event->getSlug()]);
             }
 
-            return $this->redirectToRoute('order_show', ['id' => $order->getId()]);
+            return $this->redirect($paymentUrl);
         }
 
         $subtotal = 0;

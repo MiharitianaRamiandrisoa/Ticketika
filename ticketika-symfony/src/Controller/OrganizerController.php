@@ -35,7 +35,10 @@ final class OrganizerController extends AbstractController
 
         $sold = array_sum(array_map(static fn (Event $e) => $e->getSoldTickets(), $allEvents));
         $capacity = array_sum(array_map(static fn (Event $e) => $e->getCapacity(), $allEvents));
-        $revenue = array_sum(array_map(static fn (Order $o) => $o->getTotalAr(), $orders));
+        $revenue = array_sum(array_map(
+            static fn (Order $o) => $o->isPaid() ? $o->getTotalAr() : 0,
+            $orders,
+        ));
         $fill = $capacity > 0 ? (int) round($sold / $capacity * 100) : 0;
 
         // Ventes des 7 derniers jours

@@ -8,3 +8,14 @@ services:
         exclude:
             - '../src/Kernel.php'
             - '../src/Entity/'
+
+    App\Service\PapiClient:
+        arguments:
+            $mode: '%env(PAYMENT_MODE)%'
+            $apiKey: '%env(PAPI_API_KEY)%'
+            $baseUrl: '%env(PAPI_BASE_URL)%'
+            $publicBaseUrl: '%env(PAPI_PUBLIC_URL)%'
+
+    App\Service\PapiWebhookVerifier:
+        arguments:
+            $secret: '%env(PAPI_WEBHOOK_SECRET)%'

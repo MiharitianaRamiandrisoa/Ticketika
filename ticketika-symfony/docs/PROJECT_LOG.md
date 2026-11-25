@@ -6,6 +6,12 @@ Ce fichier est la référence de continuité du projet. Toute nouvelle fonctionn
 
 ## Suivi du 24 novembre 2026
 
+- Paiement ajouté : les commandes réservent les places en `PENDING_PAYMENT`, puis créent les billets uniquement après `SUCCESS`.
+- Ajoutés : `PapiClient`, `PapiWebhookVerifier`, `OrderPaymentFinalizer`, `PaymentController`, page de simulation locale et migrations `Version20261124140000` / `Version20261124141000`.
+- Configuration locale : `PAYMENT_MODE=fake` permet de tester sans compte ni argent réel ; `PAYMENT_MODE=papi` active le Hosted Checkout Papi.
+- Vérifié : flux local réservation/échec/libération, flux réussite/création de billet, validation de signature webhook, syntaxe PHP/Twig, schéma Doctrine, migrations et démarrage HTTP sur le port local 8080.
+- À faire avant production : renseigner `PAPI_API_KEY` et `PAPI_WEBHOOK_SECRET`, utiliser une URL publique HTTPS dans `PAPI_PUBLIC_URL`, puis tester les callbacks Papi en sandbox.
+
 - Implémentés : comptes utilisateurs, inscription/connexion, espace utilisateur, rattachement des commandes aux comptes, restriction des réservations et confirmations, contrôle organisateur, gestion des catégories, retrait de Sport, retrait du bandeau défilant, ajout de Accueil, indication de défilement des cartes et retrait des remboursements.
 - Ajoutés : `User`, `Category`, `AuthService`, contrôleurs et formulaires associés, migration `Version20261124110000`.
 - Vérifié : syntaxe PHP, syntaxe Twig, routes Symfony et compilation Webpack.

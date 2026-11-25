@@ -4,7 +4,6 @@ namespace App\Service;
 
 use App\Entity\Event;
 use App\Entity\Order;
-use App\Entity\Ticket;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -36,6 +35,7 @@ final class OrderPlacer
 
         $subtotal = 0;
         $count = 0;
+        $selection = [];
 
         foreach ($event->getTicketTypes() as $type) {
             $qty = max(0, (int) ($quantities[$type->getId()] ?? 0));
@@ -47,11 +47,7 @@ final class OrderPlacer
             }
 
             $type->addSold($qty);
-            for ($i = 0; $i < $qty; $i++) {
-                $order->addTicket((new Ticket())
-                    ->setTicketType($type)
-                    ->setCode(strtoupper(bin2hex(random_bytes(6)))));
-            }
+            $selection[(string) $type->getId()] = $qty;
 
             $subtotal += $qty * $type->getPriceAr();
             $count += $qty;
@@ -62,7 +58,10 @@ final class OrderPlacer
         }
 
         $fee = $subtotal > 0 ? self::SERVICE_FEE_AR : 0;
-        $order->setServiceFeeAr($fee)->setTotalAr($subtotal + $fee);
+        $order
+            ->setTicketSelection($selection)
+            ->setServiceFeeAr($fee)
+            ->setTotalAr($subtotal + $fee);
         $event->addSoldTickets($count);
 
         $this->em->persist($order);

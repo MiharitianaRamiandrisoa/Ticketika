@@ -4,12 +4,17 @@ namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'orders')]
 class Order
 {
+    public const STATUS_PENDING_PAYMENT = 'PENDING_PAYMENT';
+    public const STATUS_PAID = 'PAID';
+    public const STATUS_FAILED = 'FAILED';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -34,6 +39,21 @@ class Order
 
     #[ORM\Column(length: 20)]
     private string $paymentMethod = 'mobile';
+
+    #[ORM\Column(length: 32)]
+    private string $status = self::STATUS_PENDING_PAYMENT;
+
+    #[ORM\Column(length: 32, nullable: true)]
+    private ?string $paymentProvider = null;
+
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $paymentReference = null;
+
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $paymentToken = null;
+
+    #[ORM\Column(type: Types::JSON)]
+    private array $ticketSelection = [];
 
     #[ORM\Column]
     private int $serviceFeeAr = 0;
@@ -73,6 +93,24 @@ class Order
 
     public function getPaymentMethod(): string { return $this->paymentMethod; }
     public function setPaymentMethod(string $v): static { $this->paymentMethod = $v; return $this; }
+
+    public function getStatus(): string { return $this->status; }
+    public function setStatus(string $status): static { $this->status = $status; return $this; }
+    public function isPaid(): bool { return $this->status === self::STATUS_PAID; }
+
+    public function getPaymentProvider(): ?string { return $this->paymentProvider; }
+    public function setPaymentProvider(?string $provider): static { $this->paymentProvider = $provider; return $this; }
+
+    public function getPaymentReference(): ?string { return $this->paymentReference; }
+    public function setPaymentReference(?string $reference): static { $this->paymentReference = $reference; return $this; }
+
+    public function getPaymentToken(): ?string { return $this->paymentToken; }
+    public function setPaymentToken(?string $token): static { $this->paymentToken = $token; return $this; }
+
+    /** @return array<string, int> */
+    public function getTicketSelection(): array { return $this->ticketSelection; }
+    /** @param array<string, int> $selection */
+    public function setTicketSelection(array $selection): static { $this->ticketSelection = $selection; return $this; }
 
     public function getServiceFeeAr(): int { return $this->serviceFeeAr; }
     public function setServiceFeeAr(int $v): static { $this->serviceFeeAr = $v; return $this; }

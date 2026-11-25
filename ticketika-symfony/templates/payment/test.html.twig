@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Test du paiement{% endblock %}
+
+{% block content %}
+<section class="mx-auto max-w-xl px-5 py-14 lg:py-20">
+    <div class="card p-8">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-olympia-secondaire">Sandbox locale</p>
+        <h1 class="mt-3 text-3xl font-bold text-olympia-bleu">Simuler le paiement</h1>
+        <p class="mt-4 text-olympia-secondaire">Commande #{{ order.id }} · {{ order.totalAr|number_format(0, ',', ' ') }} Ar</p>
+        <p class="mt-2 text-sm text-olympia-secondaire">Cette page sera remplacée par la page Papi lorsque PAYMENT_MODE=papi.</p>
+
+        <div class="mt-8 grid gap-3 sm:grid-cols-2">
+            <form method="post">
+                <input type="hidden" name="_token" value="{{ csrf_token('payment_test_' ~ order.id) }}">
+                <input type="hidden" name="action" value="success">
+                <button class="btn-primary w-full" type="submit">Simuler une réussite</button>
+            </form>
+            <form method="post">
+                <input type="hidden" name="_token" value="{{ csrf_token('payment_test_' ~ order.id) }}">
+                <input type="hidden" name="action" value="failed">
+                <button class="btn-accent w-full" type="submit">Simuler un échec</button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
