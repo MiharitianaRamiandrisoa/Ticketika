@@ -93,9 +93,9 @@ jobs:
       - name: Vérifier les secrets de transport
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
-          FTP_USER: ticketika@olympia-madagascar.mg
-          FTP_PASSWORD: 6dfanaaVZLE3GhVJcw4f
-          FTP_SERVER_DIR: /home/olympiam/domains/ticketika.olympia-madagascar.mg
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
