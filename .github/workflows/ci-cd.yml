@@ -1,0 +1,202 @@
+name: Ticketika CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - Dev
+  pull_request:
+    branches:
+      - main
+      - dev
+      - Dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ticketika-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PHP_VERSION: '8.2'
+  NODE_VERSION: '20'
+
+jobs:
+  quality:
+    name: Vérifications
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, intl, pdo_mysql
+          tools: composer:v2
+          coverage: none
+
+      - name: Valider Composer
+        run: composer validate --strict
+
+      - name: Installer les dépendances PHP
+        run: composer install --no-interaction --no-progress --prefer-dist --no-scripts
+
+      - name: Vérifier le PHP
+        shell: bash
+        run: find src -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Vérifier Twig et YAML
+        run: |
+          php bin/console lint:twig templates
+          php bin/console lint:yaml config
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Vérifier les dépendances frontend
+        run: npm ci
+
+  deploy-production:
+    name: Déployer en production
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: quality
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://ticketika.olympia-madagascar.mg
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Compiler les assets frontend
+        run: |
+          npm ci
+          npm run build
+          test -f public/build/entrypoints.json
+
+      - name: Vérifier les secrets de transport
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ticketika@olympia-madagascar.mg
+          FTP_PASSWORD: 6dfanaaVZLE3GhVJcw4f
+          FTP_SERVER_DIR: /home/olympiam/domains/ticketika.olympia-madagascar.mg
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_SERVER_DIR: ${{ secrets.SSH_SERVER_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for variable in FTP_HOST FTP_USER FTP_PASSWORD FTP_SERVER_DIR SSH_HOST SSH_USER SSH_PRIVATE_KEY SSH_SERVER_DIR; do
+            if [ -z "${!variable:-}" ]; then
+              echo "Le secret GitHub $variable est manquant."
+              exit 1
+            fi
+          done
+
+      - name: Envoyer le code par FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          security: strict
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          local-dir: ./
+          exclude: |
+            **/.git*/**
+            **/.git*
+            **/.env
+            **/.env.*
+            **/node_modules/**
+            **/vendor/**
+            **/var/**
+            **/public/uploads/**
+            **/.phpunit.cache/**
+
+      - name: Installer et préparer Symfony sur le serveur
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          SERVER_DIR: ${{ secrets.SSH_SERVER_DIR }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          envs: SERVER_DIR
+          script_stop: true
+          script: |
+            set -Eeuo pipefail
+
+            if [ -z "${SERVER_DIR:-}" ]; then
+              echo "SSH_SERVER_DIR est manquant."
+              exit 1
+            fi
+
+            cd -- "$SERVER_DIR"
+            test -f composer.json || { echo "composer.json est introuvable."; exit 1; }
+            test -f bin/console || { echo "bin/console est introuvable."; exit 1; }
+
+            # Le fichier .env est géré manuellement sur le serveur.
+            # Le workflow ne le crée, ne le modifie et ne le supprime jamais.
+            test -f .env || { echo ".env est introuvable sur le serveur."; exit 1; }
+            for required in APP_ENV APP_DEBUG APP_SECRET DATABASE_URL PAYMENT_MODE PAYMENT_HOLD_MINUTES PAPI_API_KEY PAPI_BASE_URL PAPI_PUBLIC_URL PAPI_WEBHOOK_SECRET; do
+              grep -Eq "^${required}=.+$" .env || { echo "${required} est absent de .env."; exit 1; }
+            done
+            grep -Eq '^APP_ENV=prod([[:space:]]|$)' .env || { echo "APP_ENV doit être prod."; exit 1; }
+            grep -Eq '^APP_DEBUG=0([[:space:]]|$)' .env || { echo "APP_DEBUG doit être à 0."; exit 1; }
+
+            payment_mode="$(sed -n 's/^PAYMENT_MODE=//p' .env | head -n 1 | tr -d '\r')"
+            case "$payment_mode" in
+              fake|test)
+                echo "Un mode de paiement de test est interdit en production."
+                exit 1
+                ;;
+            esac
+
+            command -v php >/dev/null 2>&1 || { echo "PHP est indisponible."; exit 1; }
+            command -v composer >/dev/null 2>&1 || { echo "Composer est indisponible."; exit 1; }
+
+            export APP_ENV=prod
+            export APP_DEBUG=0
+            umask 077
+            mkdir -p var/cache var/log var/share
+
+            composer install \
+              --no-dev \
+              --no-scripts \
+              --no-interaction \
+              --prefer-dist \
+              --no-progress \
+              --optimize-autoloader
+
+            php bin/console doctrine:migrations:migrate \
+              --env=prod \
+              --no-interaction \
+              --allow-no-migration
+
+            php bin/console doctrine:schema:validate --env=prod --skip-sync
+            php bin/console cache:clear --env=prod
+
+            find public -type d -exec chmod 755 {} +
+            find public -type f -exec chmod 644 {} +
+
+            echo "Déploiement production terminé."

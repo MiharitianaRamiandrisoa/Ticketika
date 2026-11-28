@@ -1,0 +1,26 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Kernel.php'
+            - '../src/Entity/'
+
+    App\Service\PapiClient:
+        arguments:
+            $mode: '%env(PAYMENT_MODE)%'
+            $apiKey: '%env(PAPI_API_KEY)%'
+            $baseUrl: '%env(PAPI_BASE_URL)%'
+            $publicBaseUrl: '%env(PAPI_PUBLIC_URL)%'
+            $paymentHoldMinutes: '%env(int:PAYMENT_HOLD_MINUTES)%'
+
+    App\Service\OrderPlacer:
+        arguments:
+            $paymentHoldMinutes: '%env(int:PAYMENT_HOLD_MINUTES)%'
+
+    App\Service\PapiWebhookVerifier:
+        arguments:
+            $secret: '%env(PAPI_WEBHOOK_SECRET)%'

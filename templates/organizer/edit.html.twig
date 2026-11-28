@@ -1,0 +1,68 @@
+{% extends 'organizer/_layout.html.twig' %}
+
+{% block title %}Modifier {{ event.title }}{% endblock %}
+
+{% block organizer %}
+<div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-olympia-sauge">Gestion des événements</p>
+        <h1 class="mt-2 text-3xl font-bold text-olympia-bleu">Modifier l’événement</h1>
+        <p class="mt-1 text-olympia-secondaire">Les changements sont visibles immédiatement sur le site public.</p>
+    </div>
+    <a href="{{ path('event_show', {slug: event.slug}) }}" class="btn-ghost">Voir l’événement</a>
+</div>
+
+<div class="mt-8 grid gap-8 xl:grid-cols-5">
+    <div class="card p-6 md:p-8 xl:col-span-3">
+        {{ form_start(form, {attr: {class: 'space-y-5'}}) }}
+            {{ form_row(form.title) }}
+            <div class="grid gap-4 md:grid-cols-2">
+                {{ form_row(form.category) }}
+                {{ form_row(form.place) }}
+            </div>
+            <div class="grid gap-4 md:grid-cols-2">
+                {{ form_row(form.startsAt) }}
+                <div class="rounded-2xl bg-olympia-sable p-4 text-sm text-olympia-secondaire">
+                    <p class="font-bold text-olympia-bleu">Capacité totale</p>
+                    <p class="mt-1"><span data-ticket-types-total>{{ event.capacity }}</span> place(s), calculée depuis les quantités ci-dessous.</p>
+                </div>
+            </div>
+            <fieldset class="space-y-4" data-ticket-types data-index="{{ form.ticketTypes|length }}" data-prototype="{{ form_widget(form.ticketTypes.vars.prototype)|e('html_attr') }}">
+                <div class="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                        <legend class="text-lg font-bold text-olympia-bleu">Types de billet</legend>
+                        <p class="mt-1 text-sm text-olympia-secondaire">Exemples : Standard, VIP, Adulte, Enfant ou Entrée gratuite. Prix à 0 Ar = entrée gratuite.</p>
+                    </div>
+                    <button type="button" class="btn-ghost" data-add-ticket-type>+ Ajouter un type</button>
+                </div>
+                {{ form_errors(form.ticketTypes) }}
+                <div class="space-y-4" data-ticket-types-list>
+                    {% for ticketTypeForm in form.ticketTypes %}
+                        <div class="rounded-2xl bg-olympia-sable p-4" data-ticket-type>
+                            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                                {{ form_row(ticketTypeForm.name) }}
+                                {{ form_row(ticketTypeForm.priceAr) }}
+                                {{ form_row(ticketTypeForm.quantity) }}
+                                {{ form_row(ticketTypeForm.note) }}
+                            </div>
+                            <button type="button" class="mt-3 text-sm font-semibold text-red-700 underline-offset-4 hover:underline" data-remove-ticket-type>Supprimer ce type</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </fieldset>
+            {{ form_row(form.description) }}
+            <div class="flex flex-wrap justify-end gap-3">
+                <a href="{{ path('organizer_dashboard') }}" class="btn-ghost">Annuler</a>
+                <button type="submit" class="btn-primary">Enregistrer les changements</button>
+            </div>
+        {{ form_end(form) }}
+    </div>
+
+    <aside class="card p-6 xl:sticky xl:top-24 xl:col-span-2 xl:h-fit">
+        <p class="text-xs font-semibold uppercase tracking-wider text-olympia-secondaire">État actuel</p>
+        <p class="mt-4 text-xl font-bold text-olympia-bleu">{{ event.title }}</p>
+        <p class="mt-2 text-sm text-olympia-secondaire">{{ event.soldTickets }} billet{{ event.soldTickets > 1 ? 's' : '' }} vendu{{ event.soldTickets > 1 ? 's' : '' }} sur {{ event.capacity }}.</p>
+        <p class="mt-4 rounded-2xl bg-olympia-sable px-4 py-3 text-sm text-olympia-secondaire">La capacité ne peut pas descendre sous le nombre de billets déjà vendus.</p>
+    </aside>
+</div>
+{% endblock %}

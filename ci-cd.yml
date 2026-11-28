@@ -1,0 +1,253 @@
+
+
+
+name: Deploy Olympia
+
+on:
+  push:
+    branches: [main, Dev, dev]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: olympia-deploy-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: ${{ github.ref_name == 'main' }}
+    name: Déploiement production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code source
+        uses: actions/checkout@v4
+
+      - name: Préparer Node.js et compiler les assets
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Installer les dépendances frontend
+        run: npm ci
+
+      - name: Compiler les assets frontend
+        run: npm run build
+
+      - name: Déployer uniquement les sources par FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          server-dir: ${{ secrets.FTP_SERVER_DIR || '/public_html/' }}
+          local-dir: ./
+          security: strict
+          exclude: |
+            **/.git*/**
+            **/.git*
+            **/.env
+            **/.env.*
+            **/node_modules/**
+            **/vendor/**
+            **/var/**
+            **/public/assets/**
+            **/public/uploads/**
+            **/assets/vendor/**
+            **/.phpunit.cache/**
+
+      - name: Installer les dépendances PHP et préparer Symfony
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          DB_HOST: ${{ secrets.HOST_BASE }}
+          DB_NAME: ${{ secrets.NOM_BASE }}
+          DB_USER: ${{ secrets.NOM_UTILISATEUR }}
+          DB_PASSWORD: ${{ secrets.MOT_DE_PASSE }}
+          MAILER_USERNAME: ${{ secrets.NEWSLETTER_SMTP_USERNAME }}
+          MAILER_PASSWORD: ${{ secrets.NEWSLETTER_SMTP_PASSWORD }}
+          ACTUALITE_IMPORT_API_KEY: ${{ secrets.ACTUALITE_IMPORT_API_KEY || 'test-key' }}
+          EVENEMENT_IMPORT_API_KEY: ${{ secrets.EVENEMENT_IMPORT_API_KEY || 'test-key' }}
+          PROMOTION_IMPORT_API_KEY: ${{ secrets.PROMOTION_IMPORT_API_KEY || 'test-key' }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script_stop: true
+          envs: APP_SECRET,DB_HOST,DB_NAME,DB_USER,DB_PASSWORD,MAILER_USERNAME,MAILER_PASSWORD,ACTUALITE_IMPORT_API_KEY,EVENEMENT_IMPORT_API_KEY,PROMOTION_IMPORT_API_KEY
+          script: |
+            set -eu
+
+            SERVER_DIR='${{ secrets.SSH_SERVER_DIR || '/home/olympiam/domains/olympia-madagascar.mg/public_html' }}'
+            cd "$SERVER_DIR"
+            export PATH="$HOME/.local/bin:$PATH"
+            echo "SSH user: $(whoami)"
+            echo "Working directory: $(pwd)"
+            test -f composer.json || { echo "ERROR: composer.json is missing from the deployment directory."; exit 1; }
+            test -f bin/console || { echo "ERROR: Symfony bin/console is missing from the deployment directory."; exit 1; }
+
+            umask 077
+            test -f .env || { echo "ERROR: .env is missing on the server."; exit 1; }
+            for required in APP_ENV APP_DEBUG APP_SECRET DATABASE_URL PAYMENT_MODE PAYMENT_HOLD_MINUTES PAPI_API_KEY PAPI_BASE_URL PAPI_PUBLIC_URL PAPI_WEBHOOK_SECRET; do
+              grep -Eq "^${required}=.+$" .env || { echo "ERROR: ${required} is missing from .env."; exit 1; }
+            done
+            grep -Eq '^APP_ENV=prod$' .env || { echo "ERROR: APP_ENV must be prod in .env."; exit 1; }
+            grep -Eq '^APP_DEBUG=0$' .env || { echo "ERROR: APP_DEBUG must be 0 in .env."; exit 1; }
+
+            if grep -Eq '^PAYMENT_MODE=(fake|test)$' .env; then
+              echo "ERROR: fake payment mode is not allowed in production."
+              exit 1
+            fi
+
+            command -v php >/dev/null 2>&1 || { echo "ERROR: PHP is not available."; exit 1; }
+
+            export APP_ENV=prod
+            export APP_DEBUG=0
+            mkdir -p var/cache var/log var/share
+
+            command -v composer >/dev/null 2>&1 || { echo "ERROR: Composer is not available."; exit 1; }
+            php --version | head -n 1
+            composer --version
+
+            composer install \
+              --no-dev \
+              --no-scripts \
+              --no-interaction \
+              --prefer-dist \
+              --no-progress \
+              --optimize-autoloader
+
+            php bin/console doctrine:migrations:migrate \
+              --env=prod \
+              --no-interaction \
+              --allow-no-migration
+
+            php bin/console asset-map:compile --env=prod
+            php bin/console cache:clear --env=prod
+            find public -type d -exec chmod 755 {} +
+            find public -type f -exec chmod 644 {} +
+
+            echo "Deployment completed. JavaScript assets are managed manually on the server."
+
+  deploy-preprod:
+    if: ${{ github.ref_name == 'Dev' || github.ref_name == 'dev' }}
+    name: Déploiement préproduction
+    runs-on: ubuntu-latest
+    environment:
+      name: preprod
+      url: https://test.olympia-madagascar.mg
+
+    steps:
+      - name: Récupérer le code source
+        uses: actions/checkout@v4
+
+      - name: Préparer Node.js et compiler les assets
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Installer les dépendances frontend
+        run: npm ci
+
+      - name: Compiler les assets frontend
+        run: npm run build
+
+      - name: Déployer les sources par FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.PREPROD_FTP_HOST }}
+          username: ${{ secrets.PREPROD_FTP_USER }}
+          password: ${{ secrets.PREPROD_FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          server-dir: ${{ secrets.PREPROD_FTP_SERVER_DIR || '/public_html/' }}
+          local-dir: ./
+          security: strict
+          exclude: |
+            **/.git*/**
+            **/.git*
+            **/.env
+            **/.env.*
+            **/node_modules/**
+            **/vendor/**
+            **/var/**
+            **/public/assets/**
+            **/public/uploads/**
+            **/assets/vendor/**
+            **/.phpunit.cache/**
+
+      - name: Installer les dépendances PHP et préparer Symfony
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          APP_SECRET: ${{ secrets.PREPROD_APP_SECRET }}
+          DB_HOST: ${{ secrets.PREPROD_DB_HOST || 'localhost' }}
+          DB_NAME: ${{ secrets.PREPROD_DB_NAME }}
+          DB_USER: ${{ secrets.PREPROD_DB_USER }}
+          DB_PASSWORD: ${{ secrets.PREPROD_DB_PASSWORD }}
+          DB_SERVER_VERSION: ${{ secrets.PREPROD_DB_SERVER_VERSION || '10.11.19-MariaDB' }}
+          ACTUALITE_IMPORT_API_KEY: ${{ secrets.ACTUALITE_IMPORT_API_KEY || 'test-key' }}
+          EVENEMENT_IMPORT_API_KEY: ${{ secrets.EVENEMENT_IMPORT_API_KEY || 'test-key' }}
+          PROMOTION_IMPORT_API_KEY: ${{ secrets.PROMOTION_IMPORT_API_KEY || 'test-key' }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script_stop: true
+          envs: APP_SECRET,DB_HOST,DB_NAME,DB_USER,DB_PASSWORD,DB_SERVER_VERSION,ACTUALITE_IMPORT_API_KEY,EVENEMENT_IMPORT_API_KEY,PROMOTION_IMPORT_API_KEY
+          script: |
+            set -eu
+
+            SERVER_DIR='${{ secrets.PREPROD_SSH_SERVER_DIR || '/home/olympiam/domains/test.olympia-madagascar.mg/public_html' }}'
+            cd "$SERVER_DIR"
+            export PATH="$HOME/.local/bin:$PATH"
+            echo "SSH user: $(whoami)"
+            echo "Working directory: $(pwd)"
+            test -f composer.json || { echo "ERROR: composer.json is missing from the preproduction directory."; exit 1; }
+            test -f bin/console || { echo "ERROR: Symfony bin/console is missing from the preproduction directory."; exit 1; }
+
+            umask 077
+            test -f .env || { echo "ERROR: .env is missing on the preproduction server."; exit 1; }
+            for required in APP_ENV APP_DEBUG APP_SECRET DATABASE_URL PAYMENT_MODE PAYMENT_HOLD_MINUTES PAPI_API_KEY PAPI_BASE_URL PAPI_PUBLIC_URL PAPI_WEBHOOK_SECRET; do
+              grep -Eq "^${required}=.+$" .env || { echo "ERROR: ${required} is missing from .env."; exit 1; }
+            done
+            grep -Eq '^APP_ENV=prod$' .env || { echo "ERROR: APP_ENV must be prod in .env."; exit 1; }
+            grep -Eq '^APP_DEBUG=0$' .env || { echo "ERROR: APP_DEBUG must be 0 in .env."; exit 1; }
+
+            if grep -Eq '^PAYMENT_MODE=(fake|test)$' .env; then
+              echo "ERROR: fake payment mode is not allowed in preproduction."
+              exit 1
+            fi
+
+            command -v php >/dev/null 2>&1 || { echo "ERROR: PHP is not available."; exit 1; }
+
+            export APP_ENV=prod
+            export APP_DEBUG=0
+            mkdir -p var/cache var/log var/share
+
+            command -v composer >/dev/null 2>&1 || { echo "ERROR: Composer is not available."; exit 1; }
+            php --version | head -n 1
+            composer --version
+
+            composer install \
+              --no-dev \
+              --no-scripts \
+              --no-interaction \
+              --prefer-dist \
+              --no-progress \
+              --optimize-autoloader
+
+            php bin/console doctrine:migrations:sync-metadata-storage --env=prod --no-interaction
+            php bin/console doctrine:migrations:migrate --env=prod --no-interaction --allow-no-migration
+            php bin/console cache:clear --env=prod
+
+            find public -type d -exec chmod 755 {} +
+            find public -type f -exec chmod 644 {} +
+
+            echo "Deployment completed. JavaScript assets are managed manually on the server."
