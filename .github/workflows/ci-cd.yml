@@ -99,11 +99,11 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_SERVER_DIR: ${{ secrets.SSH_SERVER_DIR }}
+          SSH_SERVER_DIR: ${{ secrets.SSH_SERVER_DIR || '/home/olympiam/domains/ticketika.olympia-madagascar.mg' }}
         shell: bash
         run: |
           set -euo pipefail
-          for variable in FTP_HOST FTP_USER FTP_PASSWORD FTP_SERVER_DIR SSH_HOST SSH_USER SSH_PRIVATE_KEY SSH_SERVER_DIR; do
+          for variable in FTP_HOST FTP_USER FTP_PASSWORD FTP_SERVER_DIR SSH_HOST SSH_USER SSH_PRIVATE_KEY; do
             if [ -z "${!variable:-}" ]; then
               echo "Le secret GitHub $variable est manquant."
               exit 1
@@ -135,7 +135,7 @@ jobs:
       - name: Installer et préparer Symfony sur le serveur
         uses: appleboy/ssh-action@v1.2.0
         env:
-          SERVER_DIR: ${{ secrets.SSH_SERVER_DIR }}
+          SERVER_DIR: ${{ secrets.SSH_SERVER_DIR || '/home/olympiam/domains/ticketika.olympia-madagascar.mg' }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
@@ -152,6 +152,8 @@ jobs:
             fi
 
             cd -- "$SERVER_DIR"
+            echo "Dossier de déploiement : $(pwd)"
+            ls -la
             test -f composer.json || { echo "composer.json est introuvable."; exit 1; }
             test -f bin/console || { echo "bin/console est introuvable."; exit 1; }
 
